@@ -21,9 +21,7 @@ Thumbs.db
 *.log
 
 
-# Node Files #
-node_modules
 
-
-testapp.js
-data.json
+*.pyc
+test.py
+*client_data.json

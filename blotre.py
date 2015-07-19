@@ -33,6 +33,13 @@ class TokenEndpointError(Exception):
     def __init__(self, error, error_description):
         self.error = error
         self.error_description = error_description
+        super(TokenEndpointError, self).__init__(
+            "[%s] %s" % (self.error, self.error_description))
+        
+def _token_error_from_data(data):
+    return TokenEndpointError(
+        data.get('error', ''),
+        data.get('error_description', ''))
 
 class RestError(Exception):
     """
@@ -42,12 +49,15 @@ class RestError(Exception):
         self.status_code = status_code
         self.error_description = error_description
         self.details = details
+        super(RestError, self).__init__(
+            "[%s] %s" % (self.status_code, self.error_description))
 
 def _is_error_response(body):
     return body.get('type', '') is 'Error' or 'error' in body
 
 def _rest_error_from_response(response):
     body = response.json()
+    print body
     return RestError(
         response.status_code,
         body['error'],
@@ -66,9 +76,6 @@ class Blotre:
     """
     Main Blot're flow object.
     """
-    
-
-
     def __init__(self, client, creds={}, config={}):
         self.client = client
         self.config = _extend(DEFAULT_CONFIG, config)
@@ -138,9 +145,7 @@ class Blotre:
         
         data = response.json()
         if 'error' in data or 'error_description' in data:
-            raise TokenEndpointError(
-                data.get('error', ''),
-                data.get('error_description', ''))
+            raise _token_error_from_data(data)
         else:
             return self.set_creds(data)
             
@@ -153,7 +158,7 @@ class Blotre:
             'code': code
         })
         
-    def redeem_refresh_token(self):
+    def exchange_refresh_token(self):
         """
         Attempt to exchange a refresh token for a new access token.
         If successful, update client to use these credentials.
@@ -167,10 +172,25 @@ class Blotre:
         Attempt to exchange a onetime token for a new access token.
         If successful, update client to use these credentials.
         """
-        return self._access_token_endpoint('https://oauth2grant.blot.re/onetime_code', {
-            'code': code if code else self.client['code']
-        })
-         
+        return self._access_token_endpoint(
+            'https://oauth2grant.blot.re/onetime_code', {
+                'code': code if code else self.client['code']
+            })
+    
+    def get_token_info(self):
+        """
+        Get information about the current access token.
+        """
+        response = requests.get(
+            self._format_url(OAUTH2_ROOT + 'token_info', {
+                'token': self.creds['access_token']
+            }))
+        data = response.json()
+        if response.status_code is not 200:
+            raise _token_error_from_data(data)
+        else:
+            return data
+        
 # Requests
     def _add_auth_headers(self, base):
         """Attach the acces_token to a request."""
@@ -199,13 +219,14 @@ class Blotre:
         response = getattr(requests, type)(path, **args)
         if response.status_code == 200 or response.status_code == 201:
             return response.json()
-        else:
-            if not noRetry and self._is_expired_response(response) \
-              and 'refresh_token' in self.creds:
-                self.redeem_refresh_token()
-                return self._make_request(type, path, args, noRetry = True)
-            else:
-                return response.json()
+        elif not noRetry and self._is_expired_response(response) \
+          and 'refresh_token' in self.creds:
+            try:
+                self.exchange_refresh_token()
+            except TokenEndpointError:
+                raise _rest_error_from_response(response)
+            return self._make_request(type, path, args, noRetry = True)
+        raise _rest_error_from_response(response)
                 
     def get(self, path, query={}):
         """GET request."""
@@ -309,12 +330,13 @@ class _BlotreDisposableApp(Blotre):
     def __init__(self, file, client, **kwargs):
         Blotre.__init__(self, client, **kwargs)
         self.file = file
-        self._persist_creds()
+        self._persist()
 
     def on_creds_changed(self, newCreds):
-        self._persist_creds()
+        self._persist()
 
-    def _persist_creds(self):
+    def _persist(self):
+        """Persist client data."""
         with open(self.file, 'w') as f:
             json.dump({
                 'client': self.client,
@@ -340,11 +362,10 @@ def _get_existing_disposable_app(file, clientInfo, conf):
             data = json.load(f)
         if not 'client' in data or not 'creds' in data:
             return None
-        
         return _BlotreDisposableApp(file,
             data['client'],
             creds = data['creds'],
-            config = data.get('conf', {}))
+            config = conf)
 
 def _try_redeem_disposable_app(file, client):
     """
@@ -367,48 +388,23 @@ def create_disposable_app(clientInfo, config={}):
     file = _get_disposable_app_filename(clientInfo)
     existing = _get_existing_disposable_app(file, clientInfo, config)
     if existing is not None:
-        return existing
+        if 'refresh_token' in existing.creds:
+            try:
+                existing.exchange_refresh_token()
+                return existing
+            except TokenEndpointError as e:
+                print "Existing client has expired, must recreate."
+        else:
+            try:
+                existing.get_token_info()
+                return existing
+            except TokenEndpointError as e:
+                print "Existing client has expired, will recreate."
     
-    else: # Create new disposable app
-        client = create_disposable(clientInfo, config = config)
-        if client is None:
-            return None
-        code = client.client['code']
-        userInput = raw_input("Please redeem disposable code: " + code + '\n')
-        return _try_redeem_disposable_app(file, client)
-
-
-TEST_CONF = {
-    'protocol': 'http',
-    'host': 'localhost:9000'
-}
-
-a = Blotre({
-    'client_id': '55614f0630042c617481d7c3',
-    'client_secret': 'YTY1Njg2MDctZTdjYy00ODlhLWFkNmYtNjkzYjI3N2M0MDRl',
-    'redirect_uri': 'http://localhost:50000',
-},
-config = TEST_CONF,
-creds = {
-    'access_token': 'OTU2NTQ5YzMtYjYzOC00ZGFmLWIzNWItOWVjYjZkMTNjODdl'
-})
-
-
-#print a.get_authorization_url()
-
-b = create_disposable_app({
-    'name': 'ddddd',
-    'blurb': 'fsdafs'
-}, config = TEST_CONF)
-
-print b
-
-#print a.redeem_authorization_code("MzRlMzg3YWMtNTVmYy00NjUwLTg4OTUtYmNmYzIyNWQ4ZWU1")
-#print a.creds
-
-#print a.get_streams()
-
-print a.create_stream({
-    'name': "Test1",
-    'uri': 'matt/test1' 
-})
+    # Create new disposable app
+    client = create_disposable(clientInfo, config = config)
+    if client is None:
+        return None
+    code = client.client['code']
+    userInput = raw_input("Please redeem disposable code: " + code + '\n')
+    return _try_redeem_disposable_app(file, client)
