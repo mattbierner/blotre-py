@@ -154,11 +154,11 @@ client.create_stream({
 })
 ```
 
-If the access_token expires while your client app is running and a refresh token is available, the client will silently attempt to exchange the refresh token and replay the request.
+If the access_token has expired when you make a request and a refresh token is available, the client will silently attempt to exchange the refresh token and replay the request.
 
 
 ## Disposable Command Line Apps
-[Disposable client apps][blotre-disposable] are good for prototyping and hacking together simple applications. You can create a disposable app manually using Blot're.py, but a helper for command line applications is also provided. This helper persists client data and prompts the user with instructions.
+[Disposable client apps][blotre-disposable] are good for prototyping and hacking together simple applications. You can create a disposable app manually using `blotre.create_disposable`, but a helper for command line applications is also provided. This helper persists client data and prompts the user with instructions on how to authorized the disposable app.
 
 Using it is simple:
 
@@ -171,12 +171,11 @@ client = blotre.create_disposable_app({
 })
 ```
 
-Unlike `create_disposable`, this will look for existing client data in a file and make sure this client has valid creds. If the creds are valid, not further steps are required and `client` can make authorized requests.
+Unlike `create_disposable`, this will look for existing client data in a file and make sure this client has valid credentials. If the creds are valid, no further steps are required. `client` can make authorized requests.
 
-If there is not data or the client data has expired, a new disposable app is registred with Blot're. The user is then prompted to redeem the code and press enter. Once they do this, the app exchanges its data for an access token and becomes authorized.
+If no persisted creds are available or the client data has expired, a new disposable app is registred with Blot're. The user is then prompted to redeem the code and press enter once they have completed this. Once they do this, the client exchanges its secret for an access token and becomes authorized.
 
-All this happens synchronously so `client` will always be authorized when it is returned, unless of course the user does not redeem the code. The credentials and client info are automatically persisted to a file and can be picked up later.
-
+All this happens synchronously so `client` will always be authorized when it is returned, unless of course the user does not redeem the code. The credentials and client info are automatically persisted to a json file and can be picked up later.
 
 
 [blotre]: https://blot.re

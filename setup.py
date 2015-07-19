@@ -4,6 +4,7 @@ setup(
     name='blotre',
     version='0.0.0',
     author="Matt Bierner",
+    author_email="mattbierner@users.noreply.github.com",
     license="MIT",
     description="Thin Python Blot're client.",
     url="https://github.com/mattbierner/blotre-py",
