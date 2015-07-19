@@ -95,9 +95,12 @@ class Blotre:
         
     def normalize_uri(self, uri):
         """Convert a stream path into it's normalized form."""
-        urllib.quote(
-            re.sub(r"\s", '+', uri.trim().toLowerCase()),
+        return urllib.quote(
+            re.sub(r"\s", '+', uri.strip().lower()),
             safe = '~@#$&()*!+=:),.?/\'')
+    
+    def join_uri(self, *paths):
+        return '/'.join(self.normalize_uri(x) for x in paths)
     
     def _get_websocket_protocol(self):
         return 'ws' if self.config.protocol is 'http' else 'wss'

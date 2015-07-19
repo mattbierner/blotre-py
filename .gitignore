@@ -25,3 +25,7 @@ Thumbs.db
 *.pyc
 test.py
 *client_data.json
+blotre.egg-info/
+build/
+dist/
+			
