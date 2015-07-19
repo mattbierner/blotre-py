@@ -408,9 +408,10 @@ def create_disposable_app(clientInfo, config={}):
     """
     file = _get_disposable_app_filename(clientInfo)
     existing = _get_existing_disposable_app(file, clientInfo, config)
-    if existing is not None and _check_app_is_valid(existing):
-        return existing
-    else:
-        print "Existing client has expired, must recreate."
+    if existing is not None:
+        if _check_app_is_valid(existing):
+            return existing
+        else:
+            print "Existing client has expired, must recreate."
         
     return _create_new_disposable_app(file, client, config)
