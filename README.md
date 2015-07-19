@@ -69,7 +69,7 @@ try:
     # Exchange the code for creds and update the current client
     client.redeem_authorization_code(returned_code)
     # Client is now authorized
-handle blotre.TokenEndpointError as e:
+except blotre.TokenEndpointError as e:
     # Something went wrong.
     print e
 ```
@@ -98,7 +98,7 @@ try:
     # Exchange the code for creds and update the current client
     client.redeem_onetime_code()
     # Client is now authorized
-handle blotre.TokenEndpointError as e:
+except blotre.TokenEndpointError as e:
     # Something went wrong.
     print e
 ```
@@ -129,7 +129,7 @@ try:
         'name': 'Temperature'
         'uri': "toastmastergeneral/temperature"
     })
-handle blotre.RestError as e:
+except blotre.RestError as e:
     print e # not authorized in this case
 ```
 
@@ -141,7 +141,7 @@ try:
         'name': 'A B C'
         'uri': "toastmastergeneral/a b c"
     })
-handle blotre.RestError as e:
+except blotre.RestError as e:
     print e # Invalid uri, uri may not contains spaces
 ```
 
