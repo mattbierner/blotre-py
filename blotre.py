@@ -380,6 +380,27 @@ def _try_redeem_disposable_app(file, client):
             creds = redeemedClient.creds,
             config = redeemedClient.config)
 
+def _create_new_disposable_app(file, clientInfo, config):
+    client = create_disposable(clientInfo, config = config)
+    if client is None:
+        return None
+    code = client.client['code']
+    userInput = raw_input("Please redeem disposable code: " + code + '\n')
+    return _try_redeem_disposable_app(file, client)
+
+def _check_app_is_valid(client):
+    """
+    Check to see if the app has valid creds.
+    """
+    try:
+        if 'refresh_token' in client.creds:
+            client.exchange_refresh_token()
+        else:
+            existing.get_token_info()
+        return True
+    except TokenEndpointError as e:
+        return False
+
 def create_disposable_app(clientInfo, config={}):
     """
     Use an existing disposable app if data exists or create a new one
@@ -387,24 +408,9 @@ def create_disposable_app(clientInfo, config={}):
     """
     file = _get_disposable_app_filename(clientInfo)
     existing = _get_existing_disposable_app(file, clientInfo, config)
-    if existing is not None:
-        if 'refresh_token' in existing.creds:
-            try:
-                existing.exchange_refresh_token()
-                return existing
-            except TokenEndpointError as e:
-                print "Existing client has expired, must recreate."
-        else:
-            try:
-                existing.get_token_info()
-                return existing
-            except TokenEndpointError as e:
-                print "Existing client has expired, will recreate."
-    
-    # Create new disposable app
-    client = create_disposable(clientInfo, config = config)
-    if client is None:
-        return None
-    code = client.client['code']
-    userInput = raw_input("Please redeem disposable code: " + code + '\n')
-    return _try_redeem_disposable_app(file, client)
+    if existing is not None and _check_app_is_valid(existing):
+        return existing
+    else:
+        print "Existing client has expired, must recreate."
+        
+    return _create_new_disposable_app(file, client, config)
