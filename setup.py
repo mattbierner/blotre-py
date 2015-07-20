@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='blotre',
-    version='0.0.0',
+    version='0.0.1',
     author="Matt Bierner",
     author_email="mattbierner@users.noreply.github.com",
     license="MIT",
@@ -10,5 +10,6 @@ setup(
     url="https://github.com/mattbierner/blotre-py",
     py_modules=['blotre'],
     install_requires=[
-        'requests']
+        'requests'],
+    keywords = ['blotre', "blot're", 'REST', 'oauth2']
 )

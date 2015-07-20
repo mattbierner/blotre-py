@@ -417,4 +417,4 @@ def create_disposable_app(clientInfo, config={}):
         else:
             print "Existing client has expired, must recreate."
         
-    return _create_new_disposable_app(file, client, config)
+    return _create_new_disposable_app(file, clientInfo, config)
