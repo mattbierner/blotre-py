@@ -15,6 +15,9 @@ Thin Python [Blot're][blotre] client.
  * Automatic exchanges refresh token if available.
 * Easy disposable client creation for command line apps.
 
+**Examples**
+* [Plant're](https://github.com/mattbierner/blotre-py-moisture-sensor-example) - Uses an disposable client app to upload plant soil moisutre readings to Blot're from a Raspberry Pi.
+
 ## Client Creation
 
 ### Basic Client Creation
