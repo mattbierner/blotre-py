@@ -53,11 +53,10 @@ class RestError(Exception):
             "[%s] %s" % (self.status_code, self.error_description))
 
 def _is_error_response(body):
-    return body.get('type', '') is 'Error' or 'error' in body
+    return body.get('type', '') == 'Error' or 'error' in body
 
 def _rest_error_from_response(response):
     body = response.json()
-    print body
     return RestError(
         response.status_code,
         body['error'],
@@ -81,10 +80,10 @@ class Blotre:
         self.config = _extend(DEFAULT_CONFIG, config)
         self.creds = creds
         
-    def set_creds(self, creds):
+    def set_creds(self, newCreds):
         """Manually update the current creds."""
-        self.creds = creds
-        self.on_creds_changed(creds)
+        self.creds = newCreds
+        self.on_creds_changed(newCreds)
         return self
         
     def on_creds_changed(self, newCreds):
@@ -103,7 +102,7 @@ class Blotre:
         return '/'.join(self.normalize_uri(x) for x in paths)
     
     def _get_websocket_protocol(self):
-        return 'ws' if self.config.protocol is 'http' else 'wss'
+        return 'ws' if self.config.protocol == 'http' else 'wss'
             
     def get_websocket_url(self):
         """
@@ -189,7 +188,7 @@ class Blotre:
                 'token': self.creds['access_token']
             }))
         data = response.json()
-        if response.status_code is not 200:
+        if response.status_code != 200:
             raise _token_error_from_data(data)
         else:
             return data
@@ -197,6 +196,7 @@ class Blotre:
 # Requests
     def _add_auth_headers(self, base):
         """Attach the acces_token to a request."""
+        print self.creds['access_token']
         if 'access_token' in self.creds:
             return _extend(base, {
                 'authorization': 'Bearer ' + self.creds['access_token']
@@ -207,7 +207,7 @@ class Blotre:
         """
         Check if the response failed because of an expired access token.
         """
-        if response.status_code is not 401:
+        if response.status_code != 401:
             return False
         challenge = response.headers.get('www-authenticate', '')
         return 'error="invalid_token"' in challenge
@@ -219,7 +219,7 @@ class Blotre:
         Attempts to reply the request if it fails due to an expired
         access token.
         """
-        response = getattr(requests, type)(path, **args)
+        response = getattr(requests, type)(path, headers = self._add_auth_headers(_JSON_HEADERS), **args)
         if response.status_code == 200 or response.status_code == 201:
             return response.json()
         elif not noRetry and self._is_expired_response(response) \
@@ -234,15 +234,12 @@ class Blotre:
     def get(self, path, query={}):
         """GET request."""
         return self._make_request('get',
-            self._format_url(API_ROOT + path, query=query), {
-                'headers': _JSON_HEADERS
-            })
+            self._format_url(API_ROOT + path, query=query), {})
         
     def post(self, path, body):
         """POST request."""
         return self._make_request('post',
             self._format_url(API_ROOT + path), {
-                'headers': self._add_auth_headers(_JSON_HEADERS),
                 'json': body
             })
             
@@ -250,16 +247,13 @@ class Blotre:
         """PUT request."""
         return self._make_request('put',
             self._format_url(API_ROOT + path), {
-                'headers': self._add_auth_headers(_JSON_HEADERS),
                 'json': body
             })
             
     def delete(self, path):
         """DELETE request."""
         return self._make_request('get',
-            self._format_url(API_ROOT + path), {
-                'headers': self._add_auth_headers(_JSON_HEADERS)
-            })
+            self._format_url(API_ROOT + path), {})
 
 # User Operations
     def get_user(self, userId, options={}):
@@ -318,7 +312,7 @@ def create_disposable(clientInfo, config = {}):
             OAUTH2_ROOT + 'disposable'),
         json = clientInfo)
     
-    if response.status_code is not 200:
+    if response.status_code != 200:
         return None
     else:
         body = response.json() 
@@ -411,7 +405,7 @@ def create_disposable_app(clientInfo, config={}):
     """
     file = _get_disposable_app_filename(clientInfo)
     existing = _get_existing_disposable_app(file, clientInfo, config)
-    if existing is not None:
+    if existing:
         if _check_app_is_valid(existing):
             return existing
         else:

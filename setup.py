@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='blotre',
-    version='0.0.2',
+    version='0.0.3',
     author="Matt Bierner",
     author_email="mattbierner@users.noreply.github.com",
     license="MIT",
