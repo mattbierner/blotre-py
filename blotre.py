@@ -196,7 +196,6 @@ class Blotre:
 # Requests
     def _add_auth_headers(self, base):
         """Attach the acces_token to a request."""
-        print self.creds['access_token']
         if 'access_token' in self.creds:
             return _extend(base, {
                 'authorization': 'Bearer ' + self.creds['access_token']
@@ -300,7 +299,28 @@ class Blotre:
     def delete_child(self, streamId, childId):
         """Remove a child from a stream."""
         return self.delete('stream/' + streamId + '/children/' + childId)
-        
+    
+    def get_tags(streamId):
+        """Get the tags of a stream."""
+        self.get('stream/' + streamId + '/tags')
+
+    def set_tags(streamId):
+        """Set the tags of a stream."""
+        self.post('stream/' + streamId + '/tags')
+
+    def get_tag(streamId, tag):
+        """Get a tag on a stream."""
+        self.get('stream/' + streamId + '/tags/' + tag)
+
+    def set_tag(streamId, tag):
+        """Create a tag on a stream."""
+        self.put('stream/' + streamId + '/tags/' + tag)
+
+    def delete_tag(streamId, tag):
+        """Remove a tag on a stream."""
+        self.delete('stream/' + streamId + '/tags/' + tag)
+
+
 # Basic Disposable Client
 def create_disposable(clientInfo, config = {}):
     """
