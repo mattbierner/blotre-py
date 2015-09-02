@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 0.1.1 - September 1, 2015
+* Added Python3 support.
+
 ## 0.1.0 - September 1, 2015
 * Added tag api helpers.
 ** `get_tags`, `set_tags`, `get_tag`, `set_tag`, `delete_tag` 

@@ -2,9 +2,12 @@ import json
 import os
 import re
 import requests
-import urllib
-from urlparse import urlunparse
-
+try:
+    from urllib import urlencode
+    from urlparse import urlunparse
+except ImportError:
+    from urllib.parse import urlencode
+    from urllib.parse import urlunparse
 
 _JSON_HEADERS = {
     'accepts': 'application/json',
@@ -68,7 +71,7 @@ def _format_url(config, relPath, query={}):
         config.get('host'),
         relPath,
         '',
-        urllib.urlencode(query),
+        urlencode(query),
         ''))
 
 class Blotre:
@@ -429,6 +432,6 @@ def create_disposable_app(clientInfo, config={}):
         if _check_app_is_valid(existing):
             return existing
         else:
-            print "Existing client has expired, must recreate."
+            print("Existing client has expired, must recreate.")
         
     return _create_new_disposable_app(file, clientInfo, config)
